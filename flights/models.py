@@ -72,9 +72,9 @@ class Reservation(models.Model):
 
 # How many flights are done on a given day with a given airplane
 def during(date, plane):
-    return Flight.objects\
-        .filter(plane=plane)\
-        .exclude(landingTime__date__lt=date)\
+    return Flight.objects \
+        .filter(plane=plane) \
+        .exclude(landingTime__date__lt=date) \
         .exclude(takeoffTime__date__gt=date).count()
 
 
@@ -93,6 +93,8 @@ class Flight(models.Model):
         )
 
     def clean(self):
+        if self.takeoffAirport == self.landingAirport:
+            raise ValidationError('Zero-length flight')
         if self.landingTime <= self.takeoffTime:
             raise ValidationError('Takeoff and landing times invalid')
         if self.landingTime - self.takeoffTime < timedelta(minutes=MIN_FLIGHT_MINUTES):
@@ -100,5 +102,9 @@ class Flight(models.Model):
         if during(self.takeoffTime.date(), self.plane) > DAILY_FLIGHTS_PER_PLANE or during(
                 self.landingTime.date(), self.plane) > DAILY_FLIGHTS_PER_PLANE:
             raise ValidationError('Plane flight limit per day exceeded')
+        for f in Flight.objects.filter(plane=self.plane).exclude(pk=self.pk):
+            if f.takeoffTime < self.takeoffTime <= f.landingTime or f.takeoffTime <= \
+                    self.landingTime <= f.landingTime:
+                raise ValidationError('Two flights of one plane at the same time')
 
         return super().clean()

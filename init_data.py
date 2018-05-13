@@ -59,13 +59,13 @@ def main():
             takeoffTime = landingTime + timedelta(minutes=randrange(*FLIGHT_SPAN_MINUTE_RANGE))
             landingTime = takeoffTime + timedelta(minutes=randrange(*FLIGHT_LENGTH_MINUTE_RANGE))
 
-            try:
-                with transaction.atomic():
-                    Flight.objects.create(takeoffAirport=airportObjs[takeoffAirportId],
+            # try:
+            #     with transaction.atomic():
+            Flight.objects.create(takeoffAirport=airportObjs[takeoffAirportId],
                                           landingAirport=airportObjs[landingAirportId],
                                           takeoffTime=takeoffTime, landingTime=landingTime, plane=plane)
-            except ValidationError:
-                print('Avoiding plane overuse by cancelling a generated flight')
+            # except ValidationError:
+            #     print('Avoiding plane overuse by cancelling a generated flight')
 
 
 main()
