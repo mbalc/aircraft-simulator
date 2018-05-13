@@ -26,7 +26,7 @@ def flights(request):
 
 def details(request, **kwargs):
     flight = get_object_or_404(Flight, pk=kwargs.get('pkey'))
-    reservations = Reservation.objects.filter(flight=flight)
+    reservations = Reservation.objects.filter(flight=flight, ticketCount__gt=0).order_by('-updated')
     ticks = reservations.aggregate(total=Coalesce(Sum('ticketCount'), Value(0)))
     freeSeats = flight.plane.passengerLimit - ticks.get('total')
 

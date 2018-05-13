@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db.models import Value
@@ -8,8 +10,11 @@ from django.db import models
 
 DAILY_FLIGHTS_PER_PLANE = 4
 MIN_SEAT_COUNT = 20
+MIN_FLIGHT_MINUTES = 30
 
 
+# Throw an exception that will cause a rollback of an atomic transaction in case of database
+# integrity violation during model instance update/creation
 @receiver(post_save)
 def post_save_handler(sender, instance, *args, **kwargs):
     instance.full_clean()
@@ -47,6 +52,8 @@ class Reservation(models.Model):
 
     ticketCount = models.PositiveIntegerField(default=0)
 
+    updated = models.DateTimeField(auto_now=True)
+
     class Meta:
         unique_together = ('passenger', 'flight')
 
@@ -55,13 +62,20 @@ class Reservation(models.Model):
                                                          self.flight)
 
     def clean(self):
-        f = self.flight
-        g = Reservation.objects.all()[0].flight
-        total = Reservation.objects.filter(flight=self.flight).aggregate(total=Coalesce(models.Sum(
-                'ticketCount'), Value(0)))
-        print('tlt', total)
-        if self.flight.plane.passengerLimit < total['total']:
+        totalTickets = Reservation.objects \
+            .filter(flight=self.flight) \
+            .aggregate(total=Coalesce(models.Sum('ticketCount'), Value(0)))['total']
+        if self.flight.plane.passengerLimit < totalTickets:
             raise ValidationError('Plane passenger capacity exceeded')
+        return super().clean()
+
+
+# How many flights are done on a given day with a given airplane
+def during(date, plane):
+    return Flight.objects\
+        .filter(plane=plane)\
+        .exclude(landingTime__date__lt=date)\
+        .exclude(takeoffTime__date__gt=date).count()
 
 
 class Flight(models.Model):
@@ -77,3 +91,14 @@ class Flight(models.Model):
         return 'Flight of %s from %s to %s (%s - %s)' % (
             self.plane, self.takeoffAirport, self.landingAirport, self.takeoffTime, self.landingTime
         )
+
+    def clean(self):
+        if self.landingTime <= self.takeoffTime:
+            raise ValidationError('Takeoff and landing times invalid')
+        if self.landingTime - self.takeoffTime < timedelta(minutes=MIN_FLIGHT_MINUTES):
+            raise ValidationError('Flight time too short')
+        if during(self.takeoffTime.date(), self.plane) > DAILY_FLIGHTS_PER_PLANE or during(
+                self.landingTime.date(), self.plane) > DAILY_FLIGHTS_PER_PLANE:
+            raise ValidationError('Plane flight limit per day exceeded')
+
+        return super().clean()

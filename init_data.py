@@ -1,3 +1,6 @@
+from django.core.exceptions import ValidationError
+from django.db import transaction
+
 from flights.models import Airport, Flight, Passenger, Reservation, Plane
 from random import randint, randrange
 from datetime import datetime as dt, timedelta
@@ -8,7 +11,7 @@ AIRPORTS = ['Moscow', 'Paris', 'Berlin', 'London', 'Warsaw', 'Stockholm', 'Kopen
 
 PLANE_COUNT = 50
 FLIGHTS_PER_PLANE = 50
-FLIGHT_LENGTH_MINUTE_RANGE = 40, 720
+FLIGHT_LENGTH_MINUTE_RANGE = 30, 720
 FLIGHT_SPAN_MINUTE_RANGE = 30, 1440
 
 
@@ -38,7 +41,8 @@ def main():
     airportObjs = Airport.objects.all()
 
     # init planes
-    for _ in range(PLANE_COUNT):
+    for i in range(PLANE_COUNT):
+        print('Plane', i)
         identifier = str_rep(2, rand_char) + str_rep(3, rand_id)
         passengerLimit = randint(20, 120)
         plane = Plane(identifier=identifier, passengerLimit=passengerLimit)
@@ -55,9 +59,13 @@ def main():
             takeoffTime = landingTime + timedelta(minutes=randrange(*FLIGHT_SPAN_MINUTE_RANGE))
             landingTime = takeoffTime + timedelta(minutes=randrange(*FLIGHT_LENGTH_MINUTE_RANGE))
 
-            Flight.objects.create(takeoffAirport=airportObjs[takeoffAirportId],
-                                  landingAirport=airportObjs[landingAirportId],
-                                  takeoffTime=takeoffTime, landingTime=landingTime, plane=plane)
+            try:
+                with transaction.atomic():
+                    Flight.objects.create(takeoffAirport=airportObjs[takeoffAirportId],
+                                          landingAirport=airportObjs[landingAirportId],
+                                          takeoffTime=takeoffTime, landingTime=landingTime, plane=plane)
+            except ValidationError:
+                print('Avoiding plane overuse by cancelling a generated flight')
 
 
 main()
