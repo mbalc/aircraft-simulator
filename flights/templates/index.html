@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% load static %}
+<title>Virtual Airport - {% block subtitle %}{% endblock %}</title>
+ <link rel="stylesheet" type="text/css" href={% static 'styles.css' %}>
+</head>
+<body>
+<header>
+    <a href="/">Home</a>
+    {% if request.user.isAuthenticated %}
+        logged in
+{#        <p>#}
+{#            Hi, {{ request.user.username }}.#}
+{#        </p>#}
+{#        <nav>#}
+{#            <a href="{% url 'logout' %}">Logout</a>#}
+{#        </nav>#}
+    {% else %}
+        not logged in
+{#        <form action="{% url 'login' %}?redirect={{ request.get_full_path | urlencode }}" method="POST">#}
+{#            {% csrf_token %}#}
+{#            <input type="text" name="username" placeholder="username">#}
+{#            <input type="password" name="password" placeholder="password">#}
+{#            <input type="submit" value="Login">#}
+{#        </form>#}
+{#        or <a href="{% url 'registration' %}">Register</a>#}
+    {% endif %}
+</header>
+<article>
+    {% block content %}{% endblock %}
+</article>
+</body>
+</html>
