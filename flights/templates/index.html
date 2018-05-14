@@ -2,29 +2,24 @@
 <html>
 <head>
     {% load static %}
-<title>Virtual Airport - {% block subtitle %}{% endblock %}</title>
- <link rel="stylesheet" type="text/css" href={% static 'styles.css' %}>
+    <title>Virtual Airport - {% block subtitle %}{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href={% static 'styles.css' %}>
 </head>
 <body>
 <header>
     <a href="/">Home</a>
-    {% if request.user.isAuthenticated %}
-        logged in
-{#        <p>#}
-{#            Hi, {{ request.user.username }}.#}
-{#        </p>#}
-{#        <nav>#}
-{#            <a href="{% url 'logout' %}">Logout</a>#}
-{#        </nav>#}
+    {% if request.user.is_authenticated %}
+        <a href="{% url 'logout' %}?next={{ request.get_full_path | urlencode }}">Log out</a>
     {% else %}
-        not logged in
-{#        <form action="{% url 'login' %}?redirect={{ request.get_full_path | urlencode }}" method="POST">#}
-{#            {% csrf_token %}#}
-{#            <input type="text" name="username" placeholder="username">#}
-{#            <input type="password" name="password" placeholder="password">#}
-{#            <input type="submit" value="Login">#}
-{#        </form>#}
-{#        or <a href="{% url 'registration' %}">Register</a>#}
+        {% if 'login' not in request.path %}
+            <form method="post" >
+                {% csrf_token %}
+                <input type="text" name="username" placeholder="login"/>
+                <input type="password" name="password" placeholder="password" required>
+
+                <input type="submit" value="login" formaction="{% url 'login' %}?next={{ request.get_full_path | urlencode }}"/>
+            </form>
+        {% endif %}
     {% endif %}
 </header>
 <article>

@@ -26,8 +26,8 @@
                     onclick="window.location.assign('{% url 'details' flight.pk %}');"
                 >
                     <td>{{ flight.takeoffAirport }}</td>
-                    <td>{{ flight.takeoffTime }}</td>
                     <td>{{ flight.landingAirport }}</td>
+                    <td>{{ flight.takeoffTime }}</td>
                     <td>{{ flight.landingTime }}</td>
                 </tr>
             {% empty %}

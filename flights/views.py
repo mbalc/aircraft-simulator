@@ -19,7 +19,8 @@ def flights(request):
     dateQuery = request.GET.get('search')
     flightList = Flight.objects.order_by('takeoffTime', 'landingTime')
     if dateQuery:
-        flightList = flightList.filter(takeoffTime__lte=dateQuery, landingTime__gte=dateQuery)
+        flightList = flightList.filter(takeoffTime__date__lte=dateQuery,
+                                       landingTime__date__gte=dateQuery)
 
     return render(request, 'flights.html', locals())
 

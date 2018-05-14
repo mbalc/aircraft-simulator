@@ -1,0 +1,28 @@
+{% extends "index.html" %}
+
+{% block subtitle %}Login{% endblock %}
+
+{% block content %}
+
+    {% if form.errors %}
+        <p>Your username and password didn't match. Please try again.</p>
+    {% endif %}
+
+{#    {% if next %}#}
+        {% if user.is_authenticated %}
+            <p>You are already logged in.</p>
+            <a href="{{ next }}">Return</a>
+        {% else %}
+{#            <p>Please login to see this page.</p>#}
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+
+                {{ form.as_table }}
+                <input type="submit" value="Login"/>
+                <input type="hidden" name="next" value="{{ next }}"/>
+            </form>
+
+        {% endif %}
+{#    {% endif %}#}
+
+{% endblock %}
