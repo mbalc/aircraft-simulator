@@ -1,4 +1,38 @@
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: #eef;
+}
+
+button , input.clickable {
+  text-transform: uppercase;
+  background: aquamarine;
+  border: 0;
+  font-size: 14px;
+  &:hover {
+    background: whitesmoke;
+  }
+}
+
+table, th, td {
+  margin: 3px;
+  padding: 3px;
+  border: 1px dotted black;
+}
+
+button , input {
+  padding: 6px;
+}
+
+input {
+  border: dashed 1px;
+}
+
 .clickable:hover {
   background-color: #bbb
 }
 
+header {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px;
+}

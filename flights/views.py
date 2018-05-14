@@ -52,7 +52,6 @@ def reserve(request):
 def isShort(name):
     return len(name) < 5 and len != 'asdf'
 
-
 class myForm(forms.Form):
     name = forms.CharField(validators=[isShort])
 
