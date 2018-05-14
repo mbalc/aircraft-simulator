@@ -6,7 +6,7 @@
     <article>
         <form>
             <label for="dateInput">Search by date:</label>
-            <input type="date" id="dateInput" name="search" value="{{ dateQuery }}"/>
+            <input type="date" id="dateInput" name="search" value="{{ date_query }}"/>
             <button type="submit">Search</button>
         </form>
         <h3>Scheduled flights:</h3>
@@ -20,7 +20,7 @@
             </tr>
             </thead>
             <tbody>
-            {% for flight in flightList %}
+            {% for flight in flight_list %}
                 <tr
                     class="clickable"
                     onclick="window.location.assign('{% url 'details' flight.pk %}');"

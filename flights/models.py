@@ -16,7 +16,7 @@ MIN_FLIGHT_MINUTES = 30
 # Throw an exception that will cause a rollback of an atomic transaction in case of database
 # integrity violation during model instance update/creation
 @receiver(post_save)
-def post_save_handler(sender, instance, *args, **kwargs):
+def post_save_handler(_, instance, *args, **kwargs):
     instance.full_clean()
 
 
@@ -62,10 +62,10 @@ class Reservation(models.Model):
                                                          self.flight)
 
     def clean(self):
-        totalTickets = Reservation.objects \
+        total_tickets = Reservation.objects \
             .filter(flight=self.flight) \
             .aggregate(total=Coalesce(models.Sum('ticketCount'), Value(0)))['total']
-        if self.flight.plane.passengerLimit < totalTickets:
+        if self.flight.plane.passengerLimit < total_tickets:
             raise ValidationError('Plane passenger capacity exceeded')
         return super().clean()
 
@@ -102,9 +102,9 @@ class Flight(models.Model):
         if during(self.takeoffTime.date(), self.plane) > DAILY_FLIGHTS_PER_PLANE or during(
                 self.landingTime.date(), self.plane) > DAILY_FLIGHTS_PER_PLANE:
             raise ValidationError('Plane flight limit per day exceeded')
-        for f in Flight.objects.filter(plane=self.plane).exclude(pk=self.pk):
-            if f.takeoffTime < self.takeoffTime <= f.landingTime or f.takeoffTime <= \
-                    self.landingTime <= f.landingTime:
+        for fli in Flight.objects.filter(plane=self.plane).exclude(pk=self.pk):
+            if fli.takeoffTime < self.takeoffTime <= fli.landingTime or fli.takeoffTime <= \
+                    self.landingTime <= fli.landingTime:
                 raise ValidationError('Two flights of one plane at the same time')
 
         return super().clean()
