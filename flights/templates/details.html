@@ -5,7 +5,7 @@
 {% block content %}
     <article>
         <h3>Details of flight no {{ flight.pk }}:</h3>
-        <table>
+        <table class="list">
             <tr>
                 <th>Plane identifier</th>
                 <td>{{ flight.plane.identifier }}</td>
@@ -36,9 +36,34 @@
             </tr>
         </table>
 
+        {% if user.is_authenticated %}
+            <details open>
+                <summary>Make a reservation</summary>
+                <form action="{% url 'reserve' %}" method="POST" class="input">
+                    {% csrf_token %}
+                    <div>
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" placeholder="Name"/>
+                    </div>
+                    <div>
+                        <label for="surname">Surname</label>
+                        <input type="text" id="surname" name="surname" placeholder="Surname"/>
+                    </div>
+                    <div>
+                        <label for="ticketCount">Ticket Count</label>
+                        <input type='number' id='ticketCount' name='ticketCount' value='0'/>
+                    </div>
+                    <input type="hidden" name="flight" value="{{ flight.pk }}"/>
+                    <div>
+                        <button type="submit" class="btn btn-primary">Buy ticket</button>
+                    </div>
+                </form>
+            </details>
+        {% endif %}
+
         <details open>
             <summary>List of reservations</summary>
-            <table>
+            <table class="list">
                 <thead>
                 <tr>
                     <th>Name</th>
@@ -60,19 +85,5 @@
             </table>
         </details>
     </article>
-
-    {% if user.is_authenticated %}
-        <form action="{% url 'reserve' %}" method="POST" class="mt-4">
-            {% csrf_token %}
-            <label for="name">Name</label>
-            <input type="text" id="name" name="name" placeholder="Name"/>
-            <label for="surname">Surname</label>
-            <input type="text" id="surname" name="surname" placeholder="Surname"/>
-            <label for="ticketCount">Ticket Count</label>
-            <input type='number' id='ticketCount' name='ticketCount' value='0'/>
-            <input type="hidden" name="flight" value="{{ flight.pk }}"/>
-            <button type="submit" class="btn btn-primary">Buy ticket</button>
-        </form>
-    {% endif %}
 
 {% endblock %}

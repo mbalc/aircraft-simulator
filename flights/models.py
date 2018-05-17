@@ -16,7 +16,7 @@ MIN_FLIGHT_MINUTES = 30
 # Throw an exception that will cause a rollback of an atomic transaction in case of database
 # integrity violation during model instance update/creation
 @receiver(post_save)
-def post_save_handler(_, instance, *args, **kwargs):
+def post_save_handler(sender, instance, *args, **kwargs):
     instance.full_clean()
 
 

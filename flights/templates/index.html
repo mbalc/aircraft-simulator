@@ -2,27 +2,31 @@
 <html>
 <head>
     {% load static %}
-    <title>Virtual Airport - {% block subtitle %}{% endblock %}</title>
+    <title>Aircraft Simulator - {% block subtitle %}{% endblock %}</title>
     <link rel="stylesheet" type="text/css" href={% static 'styles.css' %}>
 </head>
 <body>
 <header>
-    <a href="/">
-        <button>Home</button>
+    <a class="site-title" href="/">
+        Aircraft Simulator
     </a>
     {% if request.user.is_authenticated %}
-        <a href="{% url 'logout' %}?next={{ request.get_full_path | urlencode }}">
-            <button>Log out</button>
-        </a>
+        <div>
+            Hi, {{ request.user.username }}
+            <a href="{% url 'logout' %}?next={{ request.get_full_path | urlencode }}">
+                <button>Log out</button>
+            </a>
+        </div>
     {% else %}
         {% if 'login' not in request.path %}
             <form method="post">
                 {% csrf_token %}
-                <input type="text" name="username" placeholder="login"/>
-                <input type="password" name="password" placeholder="password" required>
-
-                <input class="clickable" type="submit" value="login"
-                       formaction="{% url 'login' %}?next={{ request.get_full_path | urlencode }}"/>
+                <input type="text" name="username" placeholder="login" required/>
+                <input type="password" name="password" placeholder="password" required/>
+                <button formaction="{% url 'login' %}?next={{ request.get_full_path | urlencode }}"
+                        type="submit">
+                    login
+                </button>
             </form>
         {% endif %}
     {% endif %}
@@ -30,5 +34,8 @@
 <article>
     {% block content %}{% endblock %}
 </article>
+<footer>
+    <span><a href="http://github/mbalc">mbalc</a> @ 2018</span>
+</footer>
 </body>
 </html>

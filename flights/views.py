@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
@@ -30,11 +31,8 @@ def details(request, **kwargs):
 
 @transaction.atomic
 @require_POST
+@login_required
 def reserve(request):
-    # print(request.POST['name'])
-    # print(request.POST['surname'])
-    # print(request.POST['ticketCount'])
-    # print(request.POST['flight'])
     passenger, _ = Passenger.objects.get_or_create(name=request.POST['name'],
                                                    surname=request.POST['surname'])
     flight = Flight.objects.get(pk=request.POST['flight'])

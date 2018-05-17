@@ -1,6 +1,11 @@
 body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   background: #eef;
+  margin: 0;
+}
+
+article {
+  padding: 2vw 2vh;
 }
 
 button , input.clickable {
@@ -13,10 +18,43 @@ button , input.clickable {
   }
 }
 
-table, th, td {
-  margin: 3px;
-  padding: 3px;
-  border: 1px dotted black;
+.site-title {
+  font-family: 'Ubuntu', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana', sans-serif;
+  color: darkorchid;
+  font-size: 40px;
+  text-decoration: none;
+  &:hover {
+    color: mediumorchid;
+  }
+}
+
+table.list {
+  &, & > tbody > tr {
+    &, & > th, & > td {
+      padding: 3px;
+      border: 1px dotted black;
+    }
+  }
+}
+
+form.input {
+  display: table;
+  div {
+    display: table-row;
+
+    label, input {
+      margin: 6px;
+      display: table-cell;
+    }
+
+    label {
+      text-align: right;
+    }
+  }
+}
+
+details {
+  margin: 20px 0;
 }
 
 button , input {
@@ -31,8 +69,17 @@ input {
   background-color: #bbb
 }
 
-header {
+header, footer {
   display: flex;
+  align-items: center;
+  background: lightsteelblue;
+  padding: 20px;
+}
+
+header {
   justify-content: space-between;
-  margin: 20px;
+}
+
+footer {
+  justify-content: space-around;
 }
