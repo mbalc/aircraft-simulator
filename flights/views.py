@@ -12,7 +12,7 @@ from flights.models import Flight, Reservation, Passenger
 
 def flights(request):
     date_query = request.GET.get('search')
-    flight_list = Flight.objects.order_by('takeoffTime', 'landingTime')
+    flight_list = Flight.objects.select_for_update().order_by('takeoffTime', 'landingTime')
     if date_query:
         flight_list = flight_list.filter(takeoffTime__date__lte=date_query,
                                          landingTime__date__gte=date_query)
@@ -22,7 +22,8 @@ def flights(request):
 
 def details(request, **kwargs):
     flight = get_object_or_404(Flight, pk=kwargs.get('pkey'))
-    reservations = Reservation.objects.filter(flight=flight, ticketCount__gt=0).order_by('-updated')
+    reservations = Reservation.objects.select_for_update() \
+        .filter(flight=flight, ticketCount__gt=0).order_by('-updated')
     ticks = reservations.aggregate(total=Coalesce(Sum('ticketCount'), Value(0)))
     free_seats = flight.plane.passengerLimit - ticks.get('total')
 
@@ -33,10 +34,11 @@ def details(request, **kwargs):
 @require_POST
 @login_required
 def reserve(request):
-    passenger, _ = Passenger.objects.get_or_create(name=request.POST['name'],
-                                                   surname=request.POST['surname'])
-    flight = Flight.objects.get(pk=request.POST['flight'])
-    reservation, _ = Reservation.objects.get_or_create(passenger=passenger, flight=flight)
+    passenger, _ = Passenger.objects.select_for_update() \
+        .get_or_create(name=request.POST['name'], surname=request.POST['surname'])
+    flight = Flight.objects.select_for_update().get(pk=request.POST['flight'])
+    reservation, _ = Reservation.objects.select_for_update() \
+        .get_or_create(passenger=passenger, flight=flight)
     reservation.ticketCount = request.POST['ticketCount']
     reservation.save()
     return redirect('details', request.POST['flight'])
