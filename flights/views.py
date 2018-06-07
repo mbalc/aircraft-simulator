@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError, SuspiciousOperation
 from django.db import transaction
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
+from django.forms import model_to_dict
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST, require_GET
@@ -71,6 +72,12 @@ def my_error_handler(request, exception, template_name='400.html'):
     return HttpResponseBadRequest(render(request, template_name, {'details': str(exception)}))
 
 
+def make_json_detailed_model_list(model_list):
+    """Create a list of model details that is extended by a result of __str__ call on a model obj"""
+    return dict((obj.id, dict(model_to_dict(obj), **{'title': obj.__str__()}))
+                for obj in model_list)
+
+
 @require_GET
 def get_flights(request):
     """Return a JSON of all flights, optionally filtered by date"""
@@ -80,7 +87,8 @@ def get_flights(request):
         flight_list = flight_list.filter(takeoffTime__date__lte=date_query,
                                          landingTime__date__gte=date_query)
 
-    out = list(flight_list.values())
+    out = make_json_detailed_model_list(flight_list)
+    print(flight_list[0].__dict__)
     return JsonResponse({'response': out}, status=200)
 
 
@@ -90,5 +98,6 @@ def get_flights(request):
 def get_crews(request):
     # pylint: enable=unused-argument
     """Return a JSON of all crews"""
-    out = list(Crew.objects.select_for_update().values())
+    crew_list = Crew.objects.select_for_update()
+    out = make_json_detailed_model_list(crew_list)
     return JsonResponse({'response': out}, status=200)

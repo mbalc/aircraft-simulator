@@ -117,8 +117,9 @@ class Flight(models.Model):
         if self.crew and self.crew is not None:
             led_suffix = ' led by %s' % self.crew
         return 'Flight of %s from %s to %s (%s - %s)%s' % (
-            self.plane, self.takeoffAirport, self.landingAirport, self.takeoffTime,
-            self.landingTime, led_suffix
+            self.plane, self.takeoffAirport, self.landingAirport,
+            self.takeoffTime.__format__("%d %B %Y, %H:%M"),
+            self.landingTime.__format__("%d %B %Y, %H:%M"), led_suffix
         )
 
     def clean(self):

@@ -1,46 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Titile</title>
-    <script>
-        (() => {
-            function parseHeaders (data) {
-                return Object.keys(data[0]).reduce((acc, k) => acc + '<th>' + k +'</th>', '')
-            }
-            function parseData (data) {
-                return data
-                    .reduce((acc, flight) => acc + '<tr>' + Object.keys(flight)
-                            .reduce((acc, k) => acc + '<td>' + flight[k] + '</td>', '') +
-                        '</tr>', '')
-            }
-
-            const req = new XMLHttpRequest();
-            req.open('GET', 'http://localhost:8000/RESTflights');
-            req.addEventListener('readystatechange', (event) => {
-                if (req.readyState === 4 && req.status === 200) {
-                    console.log(JSON.parse(req.response));
-                    const jsonInput = JSON.parse(req.response).response;
-                    document.getElementById('flightData').innerHTML = parseData(jsonInput);
-                    document.getElementById('flightHeaders').innerHTML = parseHeaders(jsonInput);
-                    console.log('done')
-                }
-                console.error(event);
-            });
-            req.send();
-        })();
-
-    </script>
+    <title>Aircraft Simulator - Crew Manager</title>
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <script  src="/static/js/crews.js"></script>
 </head>
 <body>
-    Jakaś stronka
-    <table>
-        <thead id="flightHeaders">
+<header>
+    <a class="site-title" href="/">
+        Aircraft Simulator
+    </a>
+</header>
+<article>
+    <article>
+        <form id="flightForm">
+            <label for="dateInput">Search flights managed by a crew:</label>
+            <input type="date" id="dateInput" name="search" value="{{ date_query }}"/>
+            <button type="submit">Search</button>
+        </form>
+        <table class="list">
+            <tbody id="crewFlights">
+            </tbody>
+        </table>
 
-        </thead>
-        <tbody id="flightData">
 
-        </tbody>
-    </table>
+
+    </article>
+    <article>
+        <h1>Assign a crew to a flight:</h1>
+        <div>
+            <label for="crewSelection">Crew: </label>
+            <select id="crewSelection"></select>
+        </div>
+        <div>
+            <label for="flightSelection">Flight: </label>
+            <select id="flightSelection"></select>
+        </div>
+    </article>
+
+
+</article>
+<footer>
+    <span><a href="http://github/mbalc">mbalc</a> @ 2018</span>
+</footer>
+
 </body>
 </html>
