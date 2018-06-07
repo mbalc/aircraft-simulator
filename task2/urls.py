@@ -19,7 +19,7 @@ from django.contrib.auth import views
 
 # pylint: disable=invalid-name
 handler400 = 'flights.views.my_error_handler'
-handler500 = 'django.views.defaults.page_not_found'
+handler500 = 'django.views.defaults.server_error'
 # pylint: enable=invalid-name
 
 

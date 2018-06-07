@@ -6,6 +6,7 @@ from . import views
 urlpatterns = [
     path('', views.flights, name='flights'),
     path('reserve', login_required(views.reserve), name='reserve'),
-    path('RESTflights', views.get_flights, name='REST/flights'),
+    path('REST/flights', views.get_flights, name='REST/flights'),
+    path('REST/crews', views.get_crews, name='REST/crews'),
     path('details/<int:pkey>', views.details, name='details'),
 ]

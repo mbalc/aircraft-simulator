@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
-from django.db.models import Value
+from django.db.models import Value, Q
 from django.db.models.functions import Coalesce
 from django.dispatch import receiver
 from django.db.models.signals import post_save
@@ -41,6 +41,18 @@ class Plane(models.Model):
 
     def __str__(self):
         return 'Plane %s with %d seats' % (self.identifier, self.passengerLimit)
+
+
+class Crew(models.Model):
+    """A team identified by it's captain's credentials that can be assigned to guide a flight"""
+    cptName = models.TextField()
+    cptSurname = models.TextField()
+
+    class Meta:
+        unique_together = ('cptName', 'cptSurname')
+
+    def __str__(self):
+        return '%s %s\'s crew' % (self.cptName, self.cptSurname)
 
 
 class Passenger(models.Model):
@@ -98,10 +110,15 @@ class Flight(models.Model):
     landingTime = models.DateTimeField()
 
     plane = models.ForeignKey('Plane', on_delete=models.CASCADE)
+    crew = models.ForeignKey('Crew', on_delete=models.CASCADE, null=True, blank=True, default=None)
 
     def __str__(self):
-        return 'Flight of %s from %s to %s (%s - %s)' % (
-            self.plane, self.takeoffAirport, self.landingAirport, self.takeoffTime, self.landingTime
+        led_suffix = ''
+        if self.crew and self.crew is not None:
+            led_suffix = ' led by %s' % self.crew
+        return 'Flight of %s from %s to %s (%s - %s)%s' % (
+            self.plane, self.takeoffAirport, self.landingAirport, self.takeoffTime,
+            self.landingTime, led_suffix
         )
 
     def clean(self):
@@ -115,9 +132,14 @@ class Flight(models.Model):
         if during(self.takeoffTime.date(), self.plane) > DAILY_FLIGHTS_PER_PLANE or during(
                 self.landingTime.date(), self.plane) > DAILY_FLIGHTS_PER_PLANE:
             raise ValidationError('Plane flight limit per day exceeded')
-        for fli in Flight.objects.filter(plane=self.plane).exclude(pk=self.pk):
-            if fli.takeoffTime < self.takeoffTime <= fli.landingTime or fli.takeoffTime <= \
-                    self.landingTime <= fli.landingTime:
-                raise ValidationError('Two flights of one plane at the same time')
+
+        simultaneous_flights = Flight.objects.filter(
+            Q(takeoffTime__range=[self.takeoffTime, self.landingTime]),
+            Q(landingTime__range=[self.takeoffTime, self.landingTime]))
+
+        if simultaneous_flights.filter(plane=self.plane).exists():
+            raise ValidationError('Two flights of one plane at the same time')
+        if simultaneous_flights.filter(crew=self.crew).exists():
+            raise ValidationError('One crew supervising two flights at the same time')
 
         return super().clean()

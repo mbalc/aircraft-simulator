@@ -8,7 +8,7 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST, require_GET
 
-from flights.models import Flight, Reservation, Passenger
+from flights.models import Flight, Reservation, Passenger, Crew
 
 
 class DbIntegrityError(ValidationError, SuspiciousOperation):
@@ -28,7 +28,7 @@ def flights(request):
         flight_list = flight_list.filter(takeoffTime__date__lte=date_query,
                                          landingTime__date__gte=date_query)
 
-    return render(request, 'flights.html', {'date_query': date_query, 'flight_list': flight_list})
+    return render(request, 'flights.html', {'flight_list': flight_list})
 
 
 def details(request, **kwargs):
@@ -73,6 +73,22 @@ def my_error_handler(request, exception, template_name='400.html'):
 
 @require_GET
 def get_flights(request):
-    """Return a JSON of all flights"""
-    out = list(Flight.objects.select_for_update().values())
-    return JsonResponse({'request': request, 'response': out}, status=200)
+    """Return a JSON of all flights, optionally filtered by date"""
+    date_query = request.GET.get('search')
+    flight_list = Flight.objects.select_for_update().order_by('takeoffTime', 'landingTime')
+    if date_query:
+        flight_list = flight_list.filter(takeoffTime__date__lte=date_query,
+                                         landingTime__date__gte=date_query)
+
+    out = list(flight_list.values())
+    return JsonResponse({'response': out}, status=200)
+
+
+@require_GET
+# pylint: disable=unused-argument
+# Needed for a view to be valid
+def get_crews(request):
+    # pylint: enable=unused-argument
+    """Return a JSON of all crews"""
+    out = list(Crew.objects.select_for_update().values())
+    return JsonResponse({'response': out}, status=200)
