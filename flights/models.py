@@ -1,3 +1,4 @@
+"""Define data entities used by the whole flight management app"""
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError
@@ -13,18 +14,20 @@ MIN_SEAT_COUNT = 20
 MIN_FLIGHT_MINUTES = 30
 
 
-# Throw an exception that will cause a rollback of an atomic transaction in case of database
-# integrity violation during model instance update/creation
+#
 @receiver(post_save)
+# pylint: disable=unused-argument
+# This format of function arguments is needed by Django
 def post_save_handler(sender, instance, *args, **kwargs):
+    # pylint: enable=unused-argument
+    """Ensure after a change made to the db state that everything is all right; throw an exception
+    that will cause a rollback of an atomic transaction in case of database integrity violation
+    during the ongoing model instance update/creation"""
     instance.full_clean()
 
 
-class DbIntegrityBreach(ValidationError):
-    ...
-
-
 class Airport(models.Model):
+    """Points of flight's start or end"""
     name = models.TextField(unique=True)
 
     def __str__(self):
@@ -32,6 +35,7 @@ class Airport(models.Model):
 
 
 class Plane(models.Model):
+    """Vehicle that a flight is made with, has a limited seat space"""
     identifier = models.TextField(unique=True, primary_key=True)
     passengerLimit = models.PositiveIntegerField(validators=[MinValueValidator(MIN_SEAT_COUNT)])
 
@@ -40,6 +44,7 @@ class Plane(models.Model):
 
 
 class Passenger(models.Model):
+    """Entity that can reserve tickets for a flight, taking up a plane seats"""
     name = models.TextField()
     surname = models.TextField()
 
@@ -51,6 +56,7 @@ class Passenger(models.Model):
 
 
 class Reservation(models.Model):
+    """Tells about how many seats has a passenger reserved"""
     passenger = models.ForeignKey('Passenger', on_delete=models.CASCADE)
     flight = models.ForeignKey('Flight', on_delete=models.CASCADE)
 
@@ -66,6 +72,7 @@ class Reservation(models.Model):
                                                          self.flight)
 
     def clean(self):
+        """Check if we did exceed plane's seat limit"""
         total_tickets = Reservation.objects \
             .filter(flight=self.flight) \
             .aggregate(total=Coalesce(models.Sum('ticketCount'), Value(0)))['total']
@@ -74,8 +81,8 @@ class Reservation(models.Model):
         return super().clean()
 
 
-# How many flights are done on a given day with a given airplane
 def during(date, plane):
+    """How many flights are done on a given day with a given airplane"""
     return Flight.objects \
         .filter(plane=plane) \
         .exclude(landingTime__date__lt=date) \
@@ -83,6 +90,7 @@ def during(date, plane):
 
 
 class Flight(models.Model):
+    """The main entity of out interest"""
     takeoffAirport = models.ForeignKey('Airport', on_delete=models.CASCADE, related_name='takeoff')
     takeoffTime = models.DateTimeField()
 
@@ -97,6 +105,7 @@ class Flight(models.Model):
         )
 
     def clean(self):
+        """Check if all corner cases are met"""
         if self.takeoffAirport == self.landingAirport:
             raise ValidationError('Zero-length flight')
         if self.landingTime <= self.takeoffTime:

@@ -16,4 +16,3 @@ application = get_wsgi_application()
 application = DjangoWhiteNoise(application)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "task2.settings")
-

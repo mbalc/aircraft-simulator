@@ -1,3 +1,4 @@
+"""Provide data for models to be filled initially with"""
 from random import randint, randrange
 from datetime import datetime as dt, timedelta
 
@@ -17,20 +18,24 @@ FLIGHT_SPAN_MINUTE_RANGE = 30, 1440
 
 
 def rand_char():
+    """Get a random letter"""
     return chr(ord('A') + randrange(ord('z') - ord('a')))
 
 
 def rand_id():
+    """Generate a random plane ID"""
     return str(randrange(9))
 
 
 def str_rep(i: int, funct):
+    """Concatenate [i] results of calling a [funct] by using recursion"""
     if i <= 0:
         return ''
     return funct() + str_rep(i - 1, funct)
 
 
 def main():
+    """Take care of all data generation"""
     # cleanup all models
     for model in [Reservation, Flight, Passenger, Plane, Airport]:
         model.objects.all().delete()

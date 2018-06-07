@@ -1,3 +1,4 @@
+"""Provide multiple ways to administer upon the project"""
 #!/usr/bin/env python
 import os
 import sys
