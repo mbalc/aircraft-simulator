@@ -16,6 +16,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from django.contrib.auth import views
+from django.views import defaults
+import flights.views
+
+handler400 = 'flights.views.my_error_handler'
+# handler400 = 'django.views.defaults.bad_request'
+handler500 = 'django.views.defaults.page_not_found'
 
 urlpatterns = [
     path('admin/', admin.site.urls),

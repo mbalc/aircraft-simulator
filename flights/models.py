@@ -20,6 +20,10 @@ def post_save_handler(sender, instance, *args, **kwargs):
     instance.full_clean()
 
 
+class DbIntegrityBreach(ValidationError):
+    ...
+
+
 class Airport(models.Model):
     name = models.TextField(unique=True)
 
@@ -50,7 +54,7 @@ class Reservation(models.Model):
     passenger = models.ForeignKey('Passenger', on_delete=models.CASCADE)
     flight = models.ForeignKey('Flight', on_delete=models.CASCADE)
 
-    ticketCount = models.PositiveIntegerField(default=0)
+    ticketCount = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
 
     updated = models.DateTimeField(auto_now=True)
 
@@ -66,7 +70,7 @@ class Reservation(models.Model):
             .filter(flight=self.flight) \
             .aggregate(total=Coalesce(models.Sum('ticketCount'), Value(0)))['total']
         if self.flight.plane.passengerLimit < total_tickets:
-            raise ValidationError('Plane passenger capacity exceeded')
+            raise ValidationError('Such reservation would exceed plane passenger capacity limit')
         return super().clean()
 
 

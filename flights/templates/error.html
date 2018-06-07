@@ -1,0 +1,17 @@
+{% extends "index.html" %}
+
+{% block subtitle %}Request error{% endblock %}
+
+{% block content %}
+    <div class="text-center">
+        <h1>{% block errDetail %}{% endblock %}</h1>
+        Deal with it
+
+        {% if details %}
+            <details>
+                <summary>Additional info</summary>
+                {{ details }}
+            </details>
+        {% endif %}
+    </div>
+{% endblock %}
