@@ -90,8 +90,10 @@ function setCrew(e) {
                 fetchFlights();
             }
             else {
-                triggerStatusPopup(req.response, "rgba(223, 32, 32, 0.9)");
-                console.error(req.response);
+                triggerStatusPopup(
+                    `There was an issue with the request\n${req.getResponseHeader('error-message') || "An error occurred"}`,
+                    "rgba(223, 32, 32," + " 0.9)");
+                console.error(req);
             }
         }
         // console.error(event);

@@ -1,4 +1,5 @@
 """Provide data for templates"""
+import ast
 import json
 
 from django.contrib.auth.decorators import login_required
@@ -67,10 +68,11 @@ def reserve(request):
 
 def my_error_handler(request, exception, template_name='400.html'):
     """Show a 400 page with details of a cause if provided"""
-    # response = render_to_response('400.html', context_instance=RequestContext(request))
-    # response.status_code = 400
-    # return response
-    return HttpResponseBadRequest(render(request, template_name, {'details': str(exception)}))
+    err_except = ast.literal_eval(str(exception))['__all__']
+    err_except = "".join(err_except)
+    response = HttpResponseBadRequest(render(request, template_name, {'details': err_except}))
+    response['error-message'] = err_except
+    return response
 
 
 def make_json_detailed_model_list(model_list):
@@ -109,7 +111,7 @@ def get_crews(request):
 def set_crew(request):
     """Bind a crew to lead a flight"""
     body = json.loads(request.body)
-    print(body)
+    # print(body)
     try:
         crew = Crew.objects.select_for_update().get(pk=body['crew'])
         flight = Flight.objects.select_for_update().get(pk=body['flight'])
