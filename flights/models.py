@@ -135,8 +135,9 @@ class Flight(models.Model):
             raise ValidationError('Plane flight limit per day exceeded')
 
         simultaneous_flights = Flight.objects.filter(
-            Q(takeoffTime__range=[self.takeoffTime, self.landingTime]) or
-            Q(landingTime__range=[self.takeoffTime, self.landingTime]))
+            Q(takeoffTime__range=(self.takeoffTime, self.landingTime)) |
+            Q(landingTime__range=(self.takeoffTime, self.landingTime)) |
+            (Q(takeoffTime__lte=self.takeoffTime) & Q(landingTime__gte=self.landingTime)))
 
         print('crewCheck:', simultaneous_flights.filter(crew=self.crew))  # .filter(~q(
         # pk=self.pk)))
