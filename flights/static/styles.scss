@@ -30,7 +30,18 @@ button , input.clickable {
   &:hover {
     color: mediumorchid;
   }
+}
 
+#request-status {
+  position: fixed;
+  right: 5vw;
+  bottom: 5vh;
+  background: rgba(223,32,32,0.9);
+  display: flex;
+  justify-content: space-around;
+  visibility: hidden;
+  padding: 10vh 11vw;
+  font-size: 2vw;
 }
 
 .site-subtitle {

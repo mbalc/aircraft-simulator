@@ -86,9 +86,11 @@ function setCrew(e) {
     req.addEventListener('readystatechange', (event) => {
         if (req.readyState === 4) {
             if (req.status === 200) {
+                triggerStatusPopup("Assignment successful!", "rgba(32, 223, 32, 0.9)");
                 fetchFlights();
             }
             else {
+                triggerStatusPopup(req.response, "rgba(223, 32, 32, 0.9)");
                 console.error(req.response);
             }
         }
@@ -97,6 +99,19 @@ function setCrew(e) {
 
     req.send(JSON.stringify({crew: e.target.crewId.value, flight: e.target.flightId.value}));
     // req.send('dupa');
+}
+
+function triggerStatusPopup(innerText, color) {
+    const status = document.getElementById('request-status');
+    status.innerText = innerText
+    status.style.background = color;
+    status.style.visibility = "visible";
+    function hideStatus () {
+        status.style.visibility = "hidden";
+    }
+    setTimeout(hideStatus, 5000);
+    status.onclick = hideStatus;
+
 }
 
 // Adapted from https://docs.djangoproject.com/en/2.0/ref/csrf/#ajax

@@ -1,4 +1,6 @@
 """Provide data for templates"""
+import json
+
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError, SuspiciousOperation
 from django.db import transaction
@@ -8,8 +10,6 @@ from django.forms import model_to_dict
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST, require_GET
-
-import json
 
 from flights.models import Flight, Reservation, Passenger, Crew
 
@@ -116,6 +116,6 @@ def set_crew(request):
         flight.crew = crew
         flight.save()
     except (SuspiciousOperation, ValidationError) as err:
-        return HttpResponseBadRequest(str(err))
+        raise DbIntegrityError(err)
 
     return HttpResponse('OK')

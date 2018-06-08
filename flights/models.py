@@ -135,12 +135,16 @@ class Flight(models.Model):
             raise ValidationError('Plane flight limit per day exceeded')
 
         simultaneous_flights = Flight.objects.filter(
-            Q(takeoffTime__range=[self.takeoffTime, self.landingTime]),
+            Q(takeoffTime__range=[self.takeoffTime, self.landingTime]) or
             Q(landingTime__range=[self.takeoffTime, self.landingTime]))
 
-        if simultaneous_flights.filter(plane=self.plane).filter(~Q(pk=self.pk)).exists():
-            raise ValidationError('Two flights of one plane at the same time')
+        print('crewCheck:', simultaneous_flights.filter(crew=self.crew))  # .filter(~q(
+        # pk=self.pk)))
+        print('planeCheck:', simultaneous_flights.filter(plane=self.plane).filter(~Q(pk=self.pk)))
+
         if simultaneous_flights.filter(crew=self.crew).filter(~Q(pk=self.pk)).exists():
             raise ValidationError('One crew supervising two flights at the same time')
+        if simultaneous_flights.filter(plane=self.plane).filter(~Q(pk=self.pk)).exists():
+            raise ValidationError('Two flights of one plane at the same time')
 
         return super().clean()
