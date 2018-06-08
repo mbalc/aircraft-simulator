@@ -19,14 +19,9 @@ function updateFields() {
 }
 
 function createList(resource) {
-    return Object.keys(resource).reduce(
+    return Object.keys(resource).filter(k => resource[k].crew).reduce(
         (acc, key) => acc + `<tr><th>${key}</th><td>${resource[key].title}</td></tr>`, ''
-        // (key) => {
-        //     console.log(key, resource[key]);
-        //     return "<option>dupa</option>";
-        // }
     )
-
 }
 
 function createOptions(resource) {
@@ -78,10 +73,54 @@ function fetchCrews () {
     );
 }
 
+function setCrew(e) {
+    const req = new XMLHttpRequest();
+    const csrftoken = getCookie('csrftoken');
+
+    e.preventDefault();
+
+    req.open('POST', 'http://localhost:8000/REST/setCrew');
+    req.withCredentials = true;
+    req.setRequestHeader("X-CSRFToken", csrftoken);
+
+    req.addEventListener('readystatechange', (event) => {
+        if (req.readyState === 4) {
+            if (req.status === 200) {
+                fetchFlights();
+            }
+            else {
+                console.error(req.response);
+            }
+        }
+        // console.error(event);
+    });
+
+    req.send(JSON.stringify({crew: e.target.crewId.value, flight: e.target.flightId.value}));
+    // req.send('dupa');
+}
+
+// Adapted from https://docs.djangoproject.com/en/2.0/ref/csrf/#ajax
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 window.onload = () => {
     isLoaded = true;
     updateFields();
     document.getElementById('flightForm').onsubmit = searchFlights;
+    document.getElementById('crewForm').onsubmit = setCrew;
 };
 
 fetchFlights();

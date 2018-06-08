@@ -5,9 +5,11 @@ from django.db import transaction
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
 from django.forms import model_to_dict
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST, require_GET
+
+import json
 
 from flights.models import Flight, Reservation, Passenger, Crew
 
@@ -65,7 +67,6 @@ def reserve(request):
 
 def my_error_handler(request, exception, template_name='400.html'):
     """Show a 400 page with details of a cause if provided"""
-    print('page not found start!')
     # response = render_to_response('400.html', context_instance=RequestContext(request))
     # response.status_code = 400
     # return response
@@ -88,7 +89,6 @@ def get_flights(request):
                                          landingTime__date__gte=date_query)
 
     out = make_json_detailed_model_list(flight_list)
-    print(flight_list[0].__dict__)
     return JsonResponse({'response': out}, status=200)
 
 
@@ -101,3 +101,21 @@ def get_crews(request):
     crew_list = Crew.objects.select_for_update()
     out = make_json_detailed_model_list(crew_list)
     return JsonResponse({'response': out}, status=200)
+
+
+@transaction.atomic
+@require_POST
+@login_required
+def set_crew(request):
+    """Bind a crew to lead a flight"""
+    body = json.loads(request.body)
+    print(body)
+    try:
+        crew = Crew.objects.select_for_update().get(pk=body['crew'])
+        flight = Flight.objects.select_for_update().get(pk=body['flight'])
+        flight.crew = crew
+        flight.save()
+    except (SuspiciousOperation, ValidationError) as err:
+        return HttpResponseBadRequest(str(err))
+
+    return HttpResponse('OK')

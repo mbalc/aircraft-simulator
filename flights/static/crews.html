@@ -22,20 +22,21 @@
             <tbody id="crewFlights">
             </tbody>
         </table>
-
-
-
     </article>
+
     <article>
         <h1>Assign a crew to a flight:</h1>
-        <div>
-            <label for="crewSelection">Crew: </label>
-            <select id="crewSelection"></select>
-        </div>
-        <div>
-            <label for="flightSelection">Flight: </label>
-            <select id="flightSelection"></select>
-        </div>
+        <form action="/REST/setCrew" method="post" id="crewForm">
+            <div>
+                <label for="crewSelection">Crew: </label>
+                <select id="crewSelection" name="crewId"></select>
+            </div>
+            <div>
+                <label for="flightSelection">Flight: </label>
+                <select id="flightSelection" name="flightId"></select>
+            </div>
+            <button type="submit">Assign</button>
+        </form>
     </article>
 
 

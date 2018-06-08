@@ -138,9 +138,9 @@ class Flight(models.Model):
             Q(takeoffTime__range=[self.takeoffTime, self.landingTime]),
             Q(landingTime__range=[self.takeoffTime, self.landingTime]))
 
-        if simultaneous_flights.filter(plane=self.plane).exists():
+        if simultaneous_flights.filter(plane=self.plane).filter(~Q(pk=self.pk)).exists():
             raise ValidationError('Two flights of one plane at the same time')
-        if simultaneous_flights.filter(crew=self.crew).exists():
+        if simultaneous_flights.filter(crew=self.crew).filter(~Q(pk=self.pk)).exists():
             raise ValidationError('One crew supervising two flights at the same time')
 
         return super().clean()

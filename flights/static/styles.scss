@@ -25,12 +25,18 @@ button , input.clickable {
 .site-title {
   font-family: 'Ubuntu', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana', sans-serif;
   color: darkorchid;
-  font-size: 40px;
+  font-size: 30px;
   text-decoration: none;
   &:hover {
     color: mediumorchid;
   }
+
 }
+
+.site-subtitle {
+  font-size: 22px;
+}
+
 
 table.list {
   &, & > tbody > tr {
