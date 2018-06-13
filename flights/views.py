@@ -111,7 +111,6 @@ def get_crews(request):
 def set_crew(request):
     """Bind a crew to lead a flight"""
     body = json.loads(request.body)
-    # print(body)
     try:
         crew = Crew.objects.select_for_update().get(pk=body['crew'])
         flight = Flight.objects.select_for_update().get(pk=body['flight'])
