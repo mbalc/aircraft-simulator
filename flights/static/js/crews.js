@@ -56,7 +56,7 @@ function fetchFlights (date=new Date()) {
     console.log(formatDate(date));
 
     fetchResource(
-        'http://localhost:8000/REST/flights?search=' + formatDate(date),
+        '/REST/flights?search=' + formatDate(date),
         (result) => { state.flights = result }
     );
 }
@@ -68,7 +68,7 @@ function searchFlights(event) {
 
 function fetchCrews () {
     fetchResource(
-        'http://localhost:8000/REST/crews',
+        '/REST/crews',
         (result) => { state.crews = result }
     );
 }
@@ -79,7 +79,7 @@ function setCrew(e) {
 
     e.preventDefault();
 
-    req.open('POST', 'http://localhost:8000/REST/setCrew');
+    req.open('POST', '/REST/setCrew');
     req.withCredentials = true;
     req.setRequestHeader("X-CSRFToken", csrftoken);
 
