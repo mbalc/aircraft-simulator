@@ -1,153 +1,140 @@
-'use strict';
-
-const defaultStateContainer = {"Please wait": { title: "Fetching..." }};
+const defaultStateContainer = { 'Please wait': { title: 'Fetching...' } };
 
 const state = {
-    flights: defaultStateContainer,
-    crews: defaultStateContainer,
-    timeout: null,
+  flights: defaultStateContainer,
+  crews: defaultStateContainer,
+  timeout: null,
 };
 
 let isLoaded = false;
 
-
-function updateFields() {
-    if (isLoaded) {
-        document.getElementById('crewSelection').innerHTML = createOptions(state.crews);
-        document.getElementById('flightSelection').innerHTML = createOptions(state.flights);
-        document.getElementById('crewFlights').innerHTML = createList(state.flights);
-    }
-}
-
 function createList(resource) {
-    return Object.keys(resource).filter(k => resource[k].crew).reduce(
-        (acc, key) => acc + `<tr><th>${key}</th><td>${resource[key].title}</td></tr>`, ''
-    )
+  return Object.keys(resource).filter(k => resource[k].crew).reduce((acc, key) => `${acc}<tr><th>${key}</th><td>${resource[key].title}</td></tr>`, '');
 }
 
 function createOptions(resource) {
-    return Object.keys(resource).reduce(
-        (acc, key) => acc + `<option value=${key}>${resource[key].title}</option>`, ''
-    )
+  return Object.keys(resource).reduce((acc, key) => `${acc}<option value=${key}>${resource[key].title}</option>`, '');
 }
 
-function fetchResource (path, updateWith) {
-    updateWith(defaultStateContainer);
-    updateFields();
-    const req = new XMLHttpRequest();
-    req.open('GET', path);
-    req.addEventListener('readystatechange', (event) => {
-        if (req.readyState === 4 && req.status === 200) {
-            console.log('done');
-            updateWith(JSON.parse(req.response).response);
-            updateFields();
-        }
-        // console.error(event);
-    });
-    req.send();
+function updateFields() {
+  if (isLoaded) {
+    document.getElementById('crewSelection').innerHTML = createOptions(state.crews);
+    document.getElementById('flightSelection').innerHTML = createOptions(state.flights);
+    document.getElementById('crewFlights').innerHTML = createList(state.flights);
+  }
+}
 
+function fetchResource(path, updateWith) {
+  updateWith(defaultStateContainer);
+  updateFields();
+  const req = new XMLHttpRequest();
+  req.open('GET', path);
+  req.addEventListener('readystatechange', () => {
+    if (req.readyState === 4 && req.status === 200) {
+      updateWith(JSON.parse(req.response).response);
+      updateFields();
+    }
+    // console.error(event);
+  });
+  req.send();
 }
 
 function formatDate(date) {
-    if (!date.getFullYear) return date;
-    return date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
+  if (!date.getFullYear) return date;
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
 
-function fetchFlights (date=new Date()) {
-    console.log(formatDate(date));
-
-    fetchResource(
-        '/REST/flights?search=' + formatDate(date),
-        (result) => { state.flights = result }
-    );
+function fetchFlights(date = new Date()) {
+  fetchResource(
+    `/REST/flights?search=${formatDate(date)}`,
+    (result) => { state.flights = result; },
+  );
 }
 
 function searchFlights(event) {
-    event.preventDefault();
-    fetchFlights(event.target.search.value);
+  event.preventDefault();
+  fetchFlights(event.target.search.value);
 }
 
-function fetchCrews () {
-    fetchResource(
-        '/REST/crews',
-        (result) => { state.crews = result }
-    );
+function fetchCrews() {
+  fetchResource(
+    '/REST/crews',
+    (result) => { state.crews = result; },
+  );
 }
 
-function setCrew(e) {
-    const req = new XMLHttpRequest();
-    const csrftoken = getCookie('csrftoken');
-
-    e.preventDefault();
-
-    hideStatus();
-
-    req.open('POST', '/REST/setCrew');
-    req.withCredentials = true;
-    req.setRequestHeader("X-CSRFToken", csrftoken);
-
-    req.addEventListener('readystatechange', (event) => {
-        if (req.readyState === 4) {
-            if (req.status === 200) {
-                triggerStatusPopup("Assignment successful!", "rgba(32, 223, 32, 0.9)");
-                fetchFlights();
-            }
-            else if (req.status === 403) {
-                triggerStatusPopup("You are not allowed to do this\nPlease login via main page",
-                    "rgba(223, 223, 32, 0.9)");
-                fetchFlights();
-            }
-            else {
-                triggerStatusPopup(
-                    `There was an issue with the request\n${req.getResponseHeader('error-message') || "An error occurred"}`,
-                    "rgba(223, 32, 32," + " 0.9)");
-                console.error(req);
-            }
-        }
-        // console.error(event);
-    });
-
-    req.send(JSON.stringify({crew: e.target.crewId.value, flight: e.target.flightId.value}));
-    // req.send('dupa');
-}
-
-function hideStatus () {
-    document.getElementById('request-status').style.visibility = "hidden";
+function hideStatus() {
+  document.getElementById('request-status').style.visibility = 'hidden';
 }
 
 function triggerStatusPopup(innerText, color) {
-    const status = document.getElementById('request-status');
-    window.clearTimeout(state.timeout);
-    status.innerText = innerText
-    status.style.background = color;
-    status.style.visibility = "visible";
-    state.timeout = setTimeout(hideStatus, 5000);
-    status.onclick = hideStatus;
-
+  const status = document.getElementById('request-status');
+  window.clearTimeout(state.timeout);
+  status.innerText = innerText;
+  status.style.background = color;
+  status.style.visibility = 'visible';
+  state.timeout = setTimeout(hideStatus, 5000);
+  status.onclick = hideStatus;
 }
 
 // Adapted from https://docs.djangoproject.com/en/2.0/ref/csrf/#ajax
 function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i += 1) {
+      const cookie = cookies[i].trim();
+      // Does this cookie string begin with the name we want?
+      if (cookie.substring(0, name.length + 1) === (`${name}=`)) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
     }
-    return cookieValue;
+  }
+  return cookieValue;
+}
+
+function setCrew(e) {
+  const req = new XMLHttpRequest();
+  const csrftoken = getCookie('csrftoken');
+
+  e.preventDefault();
+
+  hideStatus();
+
+  req.open('POST', '/REST/setCrew');
+  req.withCredentials = true;
+  req.setRequestHeader('X-CSRFToken', csrftoken);
+
+  req.addEventListener('readystatechange', () => {
+    if (req.readyState === 4) {
+      if (req.status === 200) {
+        triggerStatusPopup('Assignment successful!', 'rgba(32, 223, 32, 0.9)');
+        fetchFlights();
+      } else if (req.status === 403) {
+        triggerStatusPopup(
+          'You are not allowed to do this\nPlease login via main page',
+          'rgba(223, 223, 32, 0.9)',
+        );
+        fetchFlights();
+      } else {
+        triggerStatusPopup(
+          `There was an issue with the request\n${req.getResponseHeader('error-message') || 'An error occurred'}`,
+          'rgba(223, 32, 32, 0.9)',
+        );
+      }
+    }
+    // console.error(event);
+  });
+
+  req.send(JSON.stringify({ crew: e.target.crewId.value, flight: e.target.flightId.value }));
 }
 
 window.onload = () => {
-    isLoaded = true;
-    updateFields();
-    document.getElementById('flightForm').onsubmit = searchFlights;
-    document.getElementById('crewForm').onsubmit = setCrew;
+  isLoaded = true;
+  updateFields();
+  document.getElementById('flightForm').onsubmit = searchFlights;
+  document.getElementById('crewForm').onsubmit = setCrew;
 };
 
 fetchFlights();
