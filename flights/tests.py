@@ -14,6 +14,7 @@ from .models import Plane, Crew, Flight, Airport, Reservation, Passenger
 
 
 def init_database():
+    """Fill database with initial data"""
     now = datetime.now(tz=timezone.utc)
     airport1 = Airport.objects.create(name="a1")
     airport2 = Airport.objects.create(name="a2")
@@ -37,33 +38,36 @@ def init_database():
                 landingAirport=airport2, landingTime=now + timedelta(days=1, hours=5),
                )
     # @formatter:on
-    crew1 = Crew.objects.create(cptName='n1', cptSurname='s1')
-    crew2 = Crew.objects.create(cptName='n2', cptSurname='s2')
-    crew3 = Crew.objects.create(cptName='n3', cptSurname='s3')
+    crews = map(lambda num: Crew.objects.create(cptName='n%d' % num, cptSurname='s%d' % num),
+                (range(6)))
 
     for elem in [airport1, airport2, plane1, plane2, flight1, flight2, flight3,
-                 crew1, crew2, crew3]:
+                 *crews]:
         elem.save()
 
 
 class UITest(StaticLiveServerTestCase):
     """Test behaviour of frontend and effects of its usage on backend"""
 
-    def getUser(self):
+    def get_user(self):
+        """Return default username credential"""
         return self.creds['user']
 
-    def getPass(self):
+    def get_pass(self):
+        """Return default password credential"""
         return self.creds['pass']
 
     def login(self):
+        """Use Selenium to authenticate in the app"""
         driver = self.driver
 
-        driver.find_element_by_name("username").send_keys(self.getUser())
-        driver.find_element_by_name("password").send_keys(self.getPass())
+        driver.find_element_by_name("username").send_keys(self.get_user())
+        driver.find_element_by_name("password").send_keys(self.get_pass())
 
         driver.find_element_by_xpath("//button[@type='submit']").click()
 
     def visit_home(self):
+        """Change current page to the main one"""
         return self.driver.get('%s%s' % (self.live_server_url, '/'))
 
     def setUp(self):
@@ -73,12 +77,13 @@ class UITest(StaticLiveServerTestCase):
         init_database()
 
         self.creds = {'user': 'asdf', 'pass': 'qwer'}
-        User.objects.create_user(username=self.getUser(), password=self.getPass())
+        User.objects.create_user(username=self.get_user(), password=self.get_pass())
 
         self.visit_home()
         self.login()
 
     def reserve(self, inputs):
+        """Make a reservation for a given passenger with Selenium"""
         driver = self.driver
         for field, data in zip(["name", "surname", "ticketCount"], inputs):
             driver.find_element_by_id(field).clear()
@@ -86,18 +91,21 @@ class UITest(StaticLiveServerTestCase):
         driver.find_element_by_xpath("//button[@type='submit']").click()
 
     def check_tickets(self, row, data):
+        """Check if data shown for a passenger and relevant database entries are correct"""
         driver = self.driver
         equals = self.assertEqual
-        for col in range(len(data)):
-            equals(data[col], driver.find_element_by_xpath(
+        for col, content in enumerate(data):
+            equals(content, driver.find_element_by_xpath(
                 '//details[2]/table/tbody/tr[%s]/td[%s]' % (row, str(col + 1))).text)
 
         passengers = Passenger.objects.filter(name=data[0], surname=data[1])
-        self.assertEquals(1, len(passengers))
+        self.assertEqual(1, len(passengers))
         self.assertTrue(Reservation.objects.filter(passenger=passengers[0],
                                                    ticketCount=int(data[2])))
 
     def test_add_passenger(self):
+        """Basic scenario for passengers reserving tickets and an attempt for exceeding ticket
+        limit"""
         driver = self.driver
         reservations = [
             ["Jan", "Kowalski", "8"],
@@ -129,6 +137,7 @@ class UITest(StaticLiveServerTestCase):
         self.reserve(reservations[2])  # attempt to try to reserve too many tickets
         self.assertEqual("Your request is not right somehow",
                          driver.find_element_by_xpath("//h1").text)
+
 
 class CrewsTest(TestCase):
     """Unit tests for crew assignment code correctness"""
