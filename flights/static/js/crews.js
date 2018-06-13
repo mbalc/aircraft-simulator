@@ -89,6 +89,11 @@ function setCrew(e) {
                 triggerStatusPopup("Assignment successful!", "rgba(32, 223, 32, 0.9)");
                 fetchFlights();
             }
+            else if (req.status === 403) {
+                triggerStatusPopup("You are not allowed to do this\nPlease login via main page",
+                    "rgba(223, 223, 32, 0.9)");
+                fetchFlights();
+            }
             else {
                 triggerStatusPopup(
                     `There was an issue with the request\n${req.getResponseHeader('error-message') || "An error occurred"}`,

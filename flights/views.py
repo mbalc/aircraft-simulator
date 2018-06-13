@@ -8,7 +8,7 @@ from django.db import transaction
 from django.db.models import Sum, Value
 from django.db.models.functions import Coalesce
 from django.forms import model_to_dict
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST, require_GET
 
@@ -107,9 +107,10 @@ def get_crews(request):
 
 @transaction.atomic
 @require_POST
-@login_required
 def set_crew(request):
     """Bind a crew to lead a flight"""
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden(request)
     body = json.loads(request.body)
     try:
         crew = Crew.objects.select_for_update().get(pk=body['crew'])
