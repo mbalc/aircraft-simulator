@@ -5,6 +5,7 @@ const defaultStateContainer = {"Please wait": { title: "Fetching..." }};
 const state = {
     flights: defaultStateContainer,
     crews: defaultStateContainer,
+    timeout: null,
 };
 
 let isLoaded = false;
@@ -79,6 +80,8 @@ function setCrew(e) {
 
     e.preventDefault();
 
+    hideStatus();
+
     req.open('POST', '/REST/setCrew');
     req.withCredentials = true;
     req.setRequestHeader("X-CSRFToken", csrftoken);
@@ -108,15 +111,17 @@ function setCrew(e) {
     // req.send('dupa');
 }
 
+function hideStatus () {
+    document.getElementById('request-status').style.visibility = "hidden";
+}
+
 function triggerStatusPopup(innerText, color) {
     const status = document.getElementById('request-status');
+    window.clearTimeout(state.timeout);
     status.innerText = innerText
     status.style.background = color;
     status.style.visibility = "visible";
-    function hideStatus () {
-        status.style.visibility = "hidden";
-    }
-    setTimeout(hideStatus, 5000);
+    state.timeout = setTimeout(hideStatus, 5000);
     status.onclick = hideStatus;
 
 }
