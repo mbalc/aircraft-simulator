@@ -41,10 +41,11 @@ function fetchResource(path, updateWith) {
 
 function formatDate(date) {
   if (!date.getFullYear) return date;
+  if (date === "") return new Date();
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
 
-function fetchFlights(date = new Date()) {
+function fetchFlights(date = document.getElementById('dateInput').value || new Date()) {
   fetchResource(
     `/REST/flights?search=${formatDate(date)}`,
     (result) => { state.flights = result; },
@@ -137,5 +138,5 @@ window.onload = () => {
   document.getElementById('crewForm').onsubmit = setCrew;
 };
 
-fetchFlights();
+fetchFlights(new Date());
 fetchCrews();

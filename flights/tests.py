@@ -175,14 +175,26 @@ class UITest(StaticLiveServerTestCase):
             expected_crew = Crew.objects.all()[expected_crew]
         self.assertEqual(Flight.objects.all()[flight_index].crew, expected_crew)
 
+    def enter_crew_page(self):
+        """Move from home page to crew management page"""
+        driver = self.driver
+        driver.implicitly_wait(3)
+
+        driver.find_element_by_link_text("Manage crews").click()
+
+        driver.find_element_by_id("dateInput").click()
+        driver.find_element_by_id("dateInput").clear()
+        driver.find_element_by_id("dateInput").send_keys("2018-06-13")
+        driver.find_element_by_xpath("//button[@type='submit']").click()
+
     def test_crew_simultaneous_flights(self):
         """Don't allow a crew to fly two flights at the same time - frontend"""
-        self.driver.find_element_by_link_text("Manage crews").click()
+        self.enter_crew_page()
         check_crew_simultaneous_flights(self)
 
     def test_crew_reassignment(self):
         """Check if reassigning flight crews works as expected - frontend"""
-        self.driver.find_element_by_link_text("Manage crews").click()
+        self.enter_crew_page()
         check_crew_reassignment(self)
 
 
