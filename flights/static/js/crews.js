@@ -24,24 +24,69 @@ function updateFields() {
   }
 }
 
+function hideStatus() {
+  document.getElementById('request-status').style.visibility = 'hidden';
+}
+
+function triggerStatusPopup(innerText, color) {
+  const status = document.getElementById('request-status');
+  window.clearTimeout(state.timeout);
+  status.innerText = innerText;
+  status.style.background = color;
+  status.style.visibility = 'visible';
+  state.timeout = setTimeout(hideStatus, 5000);
+  status.onclick = hideStatus;
+}
+
+function triggerRedPopup(message) {
+  triggerStatusPopup(message, 'rgba(223, 32, 32, 0.9)');
+}
+
+function popup404() {
+  triggerRedPopup('Server did not respond for the request!');
+}
+
+function popup403() {
+  triggerRedPopup('You are not allowed to do this\nPlease login via main page');
+}
+
+function popupError(e) {
+  triggerRedPopup('Something went terribly wrong...\nSee dev console for details');
+  throw e;
+}
+
 function fetchResource(path, updateWith) {
-  updateWith(defaultStateContainer);
-  updateFields();
+  try {
+    updateWith(defaultStateContainer);
+    updateFields();
+  } catch (e) {
+    popupError(e);
+  }
+
   const req = new XMLHttpRequest();
   req.open('GET', path);
   req.addEventListener('readystatechange', () => {
-    if (req.readyState === 4 && req.status === 200) {
-      updateWith(JSON.parse(req.response).response);
-      updateFields();
+    try {
+      if (req.readyState === 4 && req.status > 100) {
+        if (req.status === 200) {
+          updateWith(JSON.parse(req.response).response);
+          updateFields();
+        } else if (req.status === 404) {
+          popup404();
+        } else {
+          triggerRedPopup('Server did not respond for the request!');
+        }
+      }
+    } catch (e) {
+      popupError(e);
     }
-    // console.error(event);
   });
   req.send();
 }
 
 function formatDate(date) {
   if (!date.getFullYear) return date;
-  if (date === "") return new Date();
+  if (date === '') return new Date();
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
 
@@ -62,20 +107,6 @@ function fetchCrews() {
     '/REST/crews',
     (result) => { state.crews = result; },
   );
-}
-
-function hideStatus() {
-  document.getElementById('request-status').style.visibility = 'hidden';
-}
-
-function triggerStatusPopup(innerText, color) {
-  const status = document.getElementById('request-status');
-  window.clearTimeout(state.timeout);
-  status.innerText = innerText;
-  status.style.background = color;
-  status.style.visibility = 'visible';
-  state.timeout = setTimeout(hideStatus, 5000);
-  status.onclick = hideStatus;
 }
 
 // Adapted from https://docs.djangoproject.com/en/2.0/ref/csrf/#ajax
@@ -108,24 +139,25 @@ function setCrew(e) {
   req.setRequestHeader('X-CSRFToken', csrftoken);
 
   req.addEventListener('readystatechange', () => {
-    if (req.readyState === 4) {
-      if (req.status === 200) {
-        triggerStatusPopup('Assignment successful!', 'rgba(32, 223, 32, 0.9)');
+    try {
+      if (req.readyState === 4 && req.status > 100) {
+        if (req.status === 200) {
+          triggerStatusPopup('Assignment successful!', 'rgba(32, 223, 32, 0.9)');
+        } else if (req.status === 403) {
+          popup403();
+        } else if (req.status === 404) {
+          popup404();
+          return;
+        } else if (req.status === 400) {
+          triggerRedPopup(`You can't do such a change\n${req.getResponseHeader('error-message')}`);
+        } else {
+          triggerRedPopup(`There was an issue with the request\n${req.getResponseHeader('error-message') || 'An error occurred'}`);
+        }
         fetchFlights();
-      } else if (req.status === 403) {
-        triggerStatusPopup(
-          'You are not allowed to do this\nPlease login via main page',
-          'rgba(223, 223, 32, 0.9)',
-        );
-        fetchFlights();
-      } else {
-        triggerStatusPopup(
-          `There was an issue with the request\n${req.getResponseHeader('error-message') || 'An error occurred'}`,
-          'rgba(223, 32, 32, 0.9)',
-        );
       }
+    } catch (err) {
+      popupError(err);
     }
-    // console.error(event);
   });
 
   req.send(JSON.stringify({ crew: e.target.crewId.value, flight: e.target.flightId.value }));

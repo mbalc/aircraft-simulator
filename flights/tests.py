@@ -161,7 +161,7 @@ class UITest(StaticLiveServerTestCase):
     def check_binding_response(self, crew_index, flight_index, should_succeed, expected_crew):
         """Make a request and check if its results are relevant to what we expected"""
         driver = self.driver
-        driver.implicitly_wait(3)
+        driver.implicitly_wait(23)
 
         Select(driver.find_element_by_id("crewSelection")).select_by_value(str(crew_index + 1))
         Select(driver.find_element_by_id("flightSelection")).select_by_value(str(flight_index + 1))
@@ -169,7 +169,8 @@ class UITest(StaticLiveServerTestCase):
         if should_succeed:
             self.assertTrue("success" in self.driver.find_element_by_id("request-status").text)
         else:
-            self.assertTrue("issue" in self.driver.find_element_by_id("request-status").text)
+            self.assertTrue("crew would have to supervise" in self.driver.find_element_by_id(
+                "request-status").text)
 
         if isinstance(expected_crew, int):
             expected_crew = Crew.objects.all()[expected_crew]
@@ -178,7 +179,7 @@ class UITest(StaticLiveServerTestCase):
     def enter_crew_page(self):
         """Move from home page to crew management page"""
         driver = self.driver
-        driver.implicitly_wait(3)
+        driver.implicitly_wait(23)
 
         driver.find_element_by_link_text("Manage crews").click()
 
@@ -196,6 +197,27 @@ class UITest(StaticLiveServerTestCase):
         """Check if reassigning flight crews works as expected - frontend"""
         self.enter_crew_page()
         check_crew_reassignment(self)
+
+    def test_crew_assignment_multi_windowed(self):
+        """Attempt to break backend by using multiple client endpoints"""
+        driver = self.driver
+
+        # init both windows
+        self.enter_crew_page()
+        driver.execute_script("window.open()")
+        driver.switch_to.window(self.driver.window_handles[1])
+        self.visit_home()
+        self.enter_crew_page()
+
+        self.check_binding_response(0, 0, True, 0)  # 0 . .
+        self.check_binding_response(1, 2, True, 1)  # 0 . 1
+        self.check_binding_response(1, 1, True, 1)  # 0 1 1
+        driver.switch_to.window(self.driver.window_handles[0])
+        self.check_binding_response(1, 0, False, 0)
+        self.check_binding_response(2, 0, True, 2)  # 2 1 1
+        driver.switch_to.window(self.driver.window_handles[1])
+        self.check_binding_response(2, 1, False, 1)
+        self.check_binding_response(0, 1, True, 0)  # 2 0 1
 
 
 class CrewsTest(TestCase):

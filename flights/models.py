@@ -127,12 +127,12 @@ class Flight(models.Model):
         if self.takeoffAirport == self.landingAirport:
             raise ValidationError('Zero-length flight')
         if self.landingTime <= self.takeoffTime:
-            raise ValidationError('Takeoff and landing times invalid')
+            raise ValidationError('Takeoff and landing times are invalid')
         if self.landingTime - self.takeoffTime < timedelta(minutes=MIN_FLIGHT_MINUTES):
-            raise ValidationError('Flight time too short')
+            raise ValidationError('Flight time is too short')
         if during(self.takeoffTime.date(), self.plane) > DAILY_FLIGHTS_PER_PLANE or during(
                 self.landingTime.date(), self.plane) > DAILY_FLIGHTS_PER_PLANE:
-            raise ValidationError('Plane flight limit per day exceeded')
+            raise ValidationError('Plane flight limit per day would be exceeded')
 
         simultaneous_flights = Flight.objects.filter(
             Q(takeoffTime__range=(self.takeoffTime, self.landingTime)) |
@@ -141,8 +141,8 @@ class Flight(models.Model):
 
         if self.crew and simultaneous_flights.filter(crew=self.crew).filter(~Q(pk=self.pk))\
                 .exists():
-            raise ValidationError('One crew supervising two flights at the same time')
+            raise ValidationError('One crew would have to supervise two flights at the same time')
         if simultaneous_flights.filter(plane=self.plane).filter(~Q(pk=self.pk)).exists():
-            raise ValidationError('Two flights of one plane at the same time')
+            raise ValidationError('There would be two simultaneous flights of a single plane')
 
         return super().clean()
