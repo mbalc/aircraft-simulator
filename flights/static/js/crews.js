@@ -1,3 +1,6 @@
+// eslint-disable-next-line import/extensions
+import * as popup from './popup.js';
+
 const defaultStateContainer = { 'Please wait': { title: 'Fetching...' } };
 
 const state = {
@@ -6,82 +9,91 @@ const state = {
   timeout: null,
 };
 
+const stateBackup = {};
+
 let isLoaded = false;
 
-function createList(resource) {
-  return Object.keys(resource).filter(k => resource[k].crew).reduce((acc, key) => `${acc}<tr><th>${key}</th><td>${resource[key].title}</td></tr>`, '');
+function keysHaveKey(obj, requestedKey) {
+  return Object.keys(obj).reduce((acc, key) => acc && obj[key][requestedKey]);
+}
+
+function backupState() {
+  Object.keys(state).forEach((key) => { stateBackup[key] = state[key]; });
+}
+
+let updateFields; // func
+
+function restoreState() {
+  Object.keys(stateBackup).forEach((key) => { state[key] = stateBackup[key]; });
+  updateFields();
 }
 
 function createOptions(resource) {
-  return Object.keys(resource).reduce((acc, key) => `${acc}<option value=${key}>${resource[key].title}</option>`, '');
+  if (resource && keysHaveKey(resource, 'title')) {
+    return Object.keys(resource)
+      .reduce((acc, key) => `${acc}<option value=${key}>${resource[key].title}</option>`, '');
+  }
+  popup.red('Faulty data received from server');
+  restoreState();
+  return '';
 }
 
-function updateFields() {
+function createList(resource) {
+  if (resource && keysHaveKey(resource, 'title')) {
+    return Object.keys(resource)
+      .filter(k => resource[k].crew) // only those that have a crew
+      .reduce((acc, key) => `${acc}<tr><th>${key}</th><td>${resource[key].title}</td></tr>`, '');
+  }
+  popup.red('Faulty data received from server');
+  restoreState();
+  return '';
+}
+
+updateFields = () => {
   if (isLoaded) {
     document.getElementById('crewSelection').innerHTML = createOptions(state.crews);
     document.getElementById('flightSelection').innerHTML = createOptions(state.flights);
     document.getElementById('crewFlights').innerHTML = createList(state.flights);
   }
-}
-
-function hideStatus() {
-  document.getElementById('request-status').style.visibility = 'hidden';
-}
-
-function triggerStatusPopup(innerText, color) {
-  const status = document.getElementById('request-status');
-  window.clearTimeout(state.timeout);
-  status.innerText = innerText;
-  status.style.background = color;
-  status.style.visibility = 'visible';
-  state.timeout = setTimeout(hideStatus, 5000);
-  status.onclick = hideStatus;
-}
-
-function triggerRedPopup(message) {
-  triggerStatusPopup(message, 'rgba(223, 32, 32, 0.9)');
-}
-
-function popup404() {
-  triggerRedPopup('Server did not respond for the request!');
-}
-
-function popup403() {
-  triggerRedPopup('You are not allowed to do this\nPlease login via main page');
-}
-
-function popupError(e) {
-  triggerRedPopup('Something went terribly wrong...\nSee dev console for details');
-  throw e;
-}
+};
 
 function fetchResource(path, updateWith) {
   try {
+    backupState();
     updateWith(defaultStateContainer);
     updateFields();
   } catch (e) {
-    popupError(e);
+    popup.error(e);
   }
 
   const req = new XMLHttpRequest();
   req.open('GET', path);
-  req.addEventListener('readystatechange', () => {
+  req.onreadystatechange = () => {
     try {
-      if (req.readyState === 4 && req.status > 100) {
+      if (req.readyState === 4) {
         if (req.status === 200) {
           updateWith(JSON.parse(req.response).response);
           updateFields();
-        } else if (req.status === 404) {
-          popup404();
         } else {
-          triggerRedPopup('Server did not respond for the request!');
+          restoreState();
+          if (req.status === 404) {
+            popup.e404();
+          } else {
+            popup.red('There was an issue with the refresh request\n - One probable' +
+              ' cause of' +
+              ' this might be the server being down');
+          }
         }
       }
     } catch (e) {
-      popupError(e);
+      popup.error(e);
     }
-  });
-  req.send();
+  };
+  try {
+    req.send();
+  } catch (err) {
+    popup.error(err);
+  }
 }
 
 function formatDate(date) {
@@ -97,16 +109,17 @@ function fetchFlights(date = document.getElementById('dateInput').value || new D
   );
 }
 
-function searchFlights(event) {
-  event.preventDefault();
-  fetchFlights(event.target.search.value);
-}
-
 function fetchCrews() {
   fetchResource(
     '/REST/crews',
     (result) => { state.crews = result; },
   );
+}
+
+function searchFlights(event) {
+  event.preventDefault();
+  fetchFlights(event.target.search.value);
+  fetchCrews();
 }
 
 // Adapted from https://docs.djangoproject.com/en/2.0/ref/csrf/#ajax
@@ -132,43 +145,46 @@ function setCrew(e) {
 
   e.preventDefault();
 
-  hideStatus();
+  popup.hideStatus();
 
   req.open('POST', '/REST/setCrew');
   req.withCredentials = true;
   req.setRequestHeader('X-CSRFToken', csrftoken);
 
-  req.addEventListener('readystatechange', () => {
+  req.onreadystatechange = () => {
     try {
-      if (req.readyState === 4 && req.status > 100) {
+      if (req.readyState === 4) {
         if (req.status === 200) {
-          triggerStatusPopup('Assignment successful!', 'rgba(32, 223, 32, 0.9)');
+          popup.status('Assignment successful!', 'rgba(32, 223, 32, 0.9)');
         } else if (req.status === 403) {
-          popup403();
+          popup.e403();
         } else if (req.status === 404) {
-          popup404();
+          popup.e404();
           return;
         } else if (req.status === 400) {
-          triggerRedPopup(`You can't do such a change\n${req.getResponseHeader('error-message')}`);
+          popup.red(`You can't do such a change\n${req.getResponseHeader('error-message')}`);
         } else {
-          triggerRedPopup(`There was an issue with the request\n${req.getResponseHeader('error-message') || 'An error occurred'}`);
+          popup.red(`There was an issue with the request\n${req.getResponseHeader('error-message') || 'An error occurred - maybe the server is down?'}`);
+          return;
         }
         fetchFlights();
+        fetchCrews();
       }
     } catch (err) {
-      popupError(err);
+      popup.error(err);
     }
-  });
-
-  req.send(JSON.stringify({ crew: e.target.crewId.value, flight: e.target.flightId.value }));
+  };
+  try {
+    req.send(JSON.stringify({ crew: e.target.crewId.value, flight: e.target.flightId.value }));
+  } catch (err) {
+    popup.error(err);
+  }
 }
 
 window.onload = () => {
   isLoaded = true;
-  updateFields();
+  fetchFlights();
+  fetchCrews();
   document.getElementById('flightForm').onsubmit = searchFlights;
   document.getElementById('crewForm').onsubmit = setCrew;
 };
-
-fetchFlights(new Date());
-fetchCrews();

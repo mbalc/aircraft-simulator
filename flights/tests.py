@@ -198,7 +198,7 @@ class UITest(StaticLiveServerTestCase):
         self.enter_crew_page()
         check_crew_reassignment(self)
 
-    def test_crew_assignment_multi_windowed(self):
+    def test_crew_multiassignment(self):
         """Attempt to break backend by using multiple client endpoints"""
         driver = self.driver
 
